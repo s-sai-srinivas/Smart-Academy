@@ -1,0 +1,82 @@
+# Render Blueprint — Smart-Academy
+# One-click deploy: Render Dashboard → New → Blueprint → pick this repo.
+# Free tier works (services sleep after inactivity — cold start ~30s).
+
+services:
+  # Go/Gin backend (Docker)
+  - type: web
+    name: smart-academy-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: GIN_MODE
+        value: release
+      - key: DB_HOST
+        fromDatabase:
+          name: smart-academy-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: smart-academy-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: smart-academy-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: smart-academy-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: smart-academy-db
+          property: database
+      - key: DB_SSLMODE
+        value: require
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISSUER
+        value: smart-academy
+      # Public Judge0 CE instance (rate-limited demo; swap for self-hosted later)
+      - key: JUDGE0_URL
+        value: https://ce.judge0.com
+      # Redis-backed job queue off on free tier (in-memory fallback)
+      - key: JOB_QUEUE_ENABLED
+        value: "false"
+      - key: REDIS_ENABLED
+        value: "false"
+      - key: AI_PROVIDER
+        value: gemini
+      - key: AI_API_KEY
+        sync: false # set in Render dashboard after deploy
+      - key: AI_MODEL
+        value: gemini-1.5-flash
+      - key: SUPER_ADMIN_EMAIL
+        sync: false # set in Render dashboard
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false # set in Render dashboard
+      - key: SUPER_ADMIN_REGDNO
+        value: SUPERADMIN001
+
+  # React/Vite frontend as static site, /api proxied to the backend
+  - type: web
+    name: smart-academy-web
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://smart-academy-api.onrender.com/api/*
+
+databases:
+  - name: smart-academy-db
+    plan: free
+    databaseName: coding_platform
+    user: coding_user

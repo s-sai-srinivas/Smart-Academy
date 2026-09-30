@@ -1,0 +1,1004 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SMART ACADEMY — CENTRALIZED DESIGN TOKENS
+   All colors, shadows, and spacing values live here.
+   Only change values — never change token names — to keep the UI consistent.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. CORE PALETTE (constant across light / dark) ────────────────────────── */
+:root {
+  /* Sky — primary actions, links, focus, charts */
+  --sky-400: #38bdf8;
+  --sky-500: #0ea5e9;
+  --sky-600: #0284c7;
+
+  /* Amber — CTAs, achievements, streaks, warnings */
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+
+  /* Emerald — success, solved, easy difficulty */
+  --emerald-500: #10b981;
+
+  /* Red — errors, failed, danger, hard difficulty */
+  --red-500: #ef4444;
+
+  /* Violet — optional accent (kept for existing usage) */
+  --violet-500: #8b5cf6;
+
+  /* Pink — optional accent (kept for existing usage) */
+  --pink-500: #ec4899;
+}
+
+/* ── 2. SEMANTIC ACCENTS (map core palette → meaning) ───────────────────────── */
+:root {
+  --accent-primary: var(--sky-500);
+  --accent-primary-hover: var(--sky-600);
+  --accent-primary-soft: rgba(14, 165, 233, 0.1);
+  --accent-primary-medium: rgba(14, 165, 233, 0.15);
+  --accent-primary-strong: rgba(14, 165, 233, 0.3);
+
+  --accent-secondary: var(--amber-500);
+  --accent-secondary-hover: var(--amber-600);
+  --accent-secondary-soft: rgba(245, 158, 11, 0.1);
+  --accent-secondary-medium: rgba(245, 158, 11, 0.15);
+  --accent-secondary-strong: rgba(245, 158, 11, 0.3);
+
+  --accent-success: var(--emerald-500);
+  --accent-success-soft: rgba(16, 185, 129, 0.1);
+  --accent-success-medium: rgba(16, 185, 129, 0.15);
+
+  --accent-danger: var(--red-500);
+  --accent-danger-soft: rgba(239, 68, 68, 0.1);
+  --accent-danger-medium: rgba(239, 68, 68, 0.15);
+
+  --accent-warning: var(--amber-500);
+  --accent-warning-soft: rgba(245, 158, 11, 0.1);
+
+  --accent-info: var(--sky-500);
+  --accent-info-soft: rgba(14, 165, 233, 0.1);
+}
+
+/* ── 3. THEME VARIABLES — LIGHT MODE ────────────────────────────────────────── */
+:root,
+:root.light {
+  /* Surfaces */
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f5;
+  --bg-elevated: #e9ecef;
+  --bg-border: #dee2e6;
+
+  /* Text */
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --text-muted: #adb5bd;
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f3f5;
+  --scrollbar-thumb: #ced4da;
+  --scrollbar-thumb-hover: #adb5bd;
+
+  /* Shadows */
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  /* Status backgrounds (light mode needs slightly more opacity) */
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-warning-bg: rgba(245, 158, 11, 0.12);
+  --status-danger-bg: rgba(239, 68, 68, 0.08);
+  --status-info-bg: rgba(14, 165, 233, 0.08);
+}
+
+/* ── 4. THEME VARIABLES — DARK MODE ─────────────────────────────────────────── */
+:root.dark {
+  /* Surfaces */
+  --bg-primary: #090b10;
+  --bg-secondary: #11131a;
+  --bg-tertiary: #181b24;
+  --bg-elevated: #202430;
+  --bg-border: #2a2e3b;
+
+  /* Text */
+  --text-primary: #f0f2f5;
+  --text-secondary: #8b91a7;
+  --text-tertiary: #5e6578;
+  --text-muted: #4a5063;
+
+  /* Scrollbar */
+  --scrollbar-track: #090b10;
+  --scrollbar-thumb: #2a2e3b;
+  --scrollbar-thumb-hover: #3a4052;
+
+  /* Shadows */
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  /* Status backgrounds */
+  --status-success-bg: rgba(16, 185, 129, 0.1);
+  --status-warning-bg: rgba(245, 158, 11, 0.1);
+  --status-danger-bg: rgba(239, 68, 68, 0.1);
+  --status-info-bg: rgba(14, 165, 233, 0.1);
+}
+
+/* ── 5. GLOBAL RESET & BASE ─────────────────────────────────────────────────── */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background-primary text-text-primary font-sans;
+    margin: 0;
+    min-height: 100vh;
+    height: 100%;
+  }
+
+  html,
+  #root {
+    height: 100%;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  /* Focus Styles */
+  *:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* ── 6. COMPONENT CLASSES ───────────────────────────────────────────────────── */
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-md font-medium text-sm transition-all duration-200 cursor-pointer border-none font-sans;
+  }
+
+  .btn-primary {
+    background: var(--accent-primary);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--accent-primary-hover);
+    transform: scale(0.98);
+  }
+  .btn-primary:active {
+    transform: scale(0.95);
+  }
+
+  .btn-secondary {
+    @apply bg-background-tertiary text-text-primary border border-background-border;
+  }
+  .btn-secondary:hover {
+    @apply bg-background-elevated;
+    border-color: var(--text-tertiary);
+  }
+  .btn-secondary:active {
+    transform: scale(0.95);
+  }
+
+  .btn-danger {
+    background: var(--accent-danger-soft);
+    color: var(--accent-danger);
+    border: 1px solid var(--accent-danger-medium);
+  }
+  .btn-danger:hover {
+    background: var(--accent-danger-medium);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  .btn-danger:active {
+    transform: scale(0.95);
+  }
+
+  .btn-success {
+    background: var(--accent-success);
+    color: #fff;
+  }
+  .btn-success:hover {
+    background: #059669; /* emerald-600 */
+  }
+  .btn-success:active {
+    transform: scale(0.95);
+  }
+
+  .btn-accent {
+    background: var(--accent-secondary);
+    color: #fff;
+  }
+  .btn-accent:hover {
+    background: var(--accent-secondary-hover);
+  }
+  .btn-accent:active {
+    transform: scale(0.95);
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-text-secondary;
+  }
+  .btn-ghost:hover {
+    @apply bg-background-tertiary text-text-primary;
+  }
+  .btn-ghost:active {
+    transform: scale(0.95);
+  }
+
+  /* Card */
+  .card {
+    @apply bg-background-secondary rounded-xl border border-background-border p-6;
+  }
+
+  .card-elevated {
+    @apply bg-background-tertiary rounded-xl border border-background-border p-6;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-3 py-2.5 bg-background-tertiary border border-background-border rounded-md text-text-primary text-sm placeholder-text-muted transition-colors duration-200;
+  }
+
+  .input:focus {
+    @apply outline-none;
+    border-color: var(--accent-primary);
+  }
+
+  .select {
+    @apply w-full px-3 py-2.5 bg-background-tertiary border border-background-border rounded-md text-text-primary text-sm transition-colors duration-200 cursor-pointer;
+  }
+
+  .select:focus {
+    @apply outline-none;
+    border-color: var(--accent-primary);
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    background: var(--accent-success-soft);
+    color: var(--accent-success);
+  }
+
+  .badge-warning {
+    background: var(--accent-warning-soft);
+    color: var(--accent-warning);
+  }
+
+  .badge-danger {
+    background: var(--accent-danger-soft);
+    color: var(--accent-danger);
+  }
+
+  .badge-info {
+    background: var(--accent-info-soft);
+    color: var(--accent-info);
+  }
+
+  .badge-neutral {
+    @apply bg-background-tertiary text-text-secondary;
+  }
+
+  /* Table */
+  .table-container {
+    @apply bg-background-secondary rounded-xl border border-background-border overflow-hidden;
+  }
+
+  .table {
+    @apply w-full border-collapse;
+  }
+
+  .table thead {
+    @apply bg-background-tertiary border-b border-background-border;
+  }
+
+  .table th {
+    @apply px-5 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider;
+  }
+
+  .table tbody tr {
+    @apply border-b border-background-border transition-colors duration-150;
+  }
+
+  .table tbody tr:hover {
+    @apply bg-background-tertiary;
+  }
+
+  .table tbody tr:last-child {
+    @apply border-b-0;
+  }
+
+  .table td {
+    @apply px-5 py-4 text-sm text-text-primary;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in;
+  }
+
+  .modal-content {
+    @apply bg-background-secondary rounded-xl border border-background-border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-in;
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    @apply fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-background-secondary border-r border-background-border z-40 transition-all duration-300;
+  }
+
+  .sidebar-collapsed {
+    @apply w-16;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-5 py-3 text-text-secondary transition-all duration-200;
+  }
+  .sidebar-link:hover {
+    @apply bg-background-tertiary text-text-primary;
+  }
+
+  .sidebar-link-active {
+    @apply bg-background-tertiary text-text-primary;
+    border-left: 2px solid var(--accent-primary);
+  }
+
+  /* Form Groups */
+  .form-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-text-secondary;
+  }
+
+  .form-row {
+    @apply grid grid-cols-2 gap-5;
+  }
+
+  @media (max-width: 640px) {
+    .form-row {
+      @apply grid-cols-1;
+    }
+  }
+}
+
+/* ── 7. PROBLEM SOLVING PAGE ────────────────────────────────────────────────── */
+
+/* The page fills the viewport below the navbar */
+.problem-view {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.problem-view.no-navbar {
+  height: 100vh;
+}
+
+/* Breadcrumb row */
+.problem-view > .flex {
+  flex-shrink: 0;
+}
+
+/* Split container: left description panel + right editor panel */
+.split-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* ── Left panel (problem description) ── */
+.left-panel {
+  width: 42%;
+  min-width: 280px;
+  max-width: 60%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--bg-border);
+  overflow: hidden;
+}
+
+/* ── Resize handle ── */
+.resize-handle {
+  width: 4px;
+  background: var(--bg-border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  touch-action: none;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+  background: var(--accent-primary);
+}
+
+/* ── Right panel (code editor) ── */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  position: relative;
+}
+
+/* ── Panel tabs ── */
+.panel-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-border);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+/* ── Tab content area ── */
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tab-pane {
+  padding: 1.25rem 1.5rem;
+}
+
+/* ── Problem detail ── */
+.problem-detail h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem 0;
+}
+
+.difficulty {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.difficulty-easy {
+  background: var(--accent-success-soft);
+  color: var(--accent-success);
+}
+
+.difficulty-medium {
+  background: var(--accent-warning-soft);
+  color: var(--accent-warning);
+}
+
+.difficulty-hard {
+  background: var(--accent-danger-soft);
+  color: var(--accent-danger);
+}
+
+/* Problem Navigation Sidebar */
+.problem-nav-item:hover {
+  background: var(--bg-secondary) !important;
+}
+
+.problem-nav-item:active {
+  background: var(--surface) !important;
+}
+
+/* Status indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.status-solved {
+  background: var(--accent-success);
+  color: #fff;
+}
+
+.status-attempted {
+  background: var(--accent-warning);
+  color: #fff;
+}
+
+.status-not-attempted {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  background: var(--accent-primary-soft);
+  color: var(--accent-primary);
+  border: 1px solid var(--accent-primary-medium);
+}
+
+/* ── Editor container ── */
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-border);
+  flex-shrink: 0;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.solve-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  background: var(--accent-primary-soft);
+  border: 1px solid var(--accent-primary-medium);
+  color: var(--sky-400);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Language selector */
+.language-select {
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.language-select:focus,
+.language-select:hover {
+  border-color: var(--accent-primary);
+}
+
+/* Monaco editor wrapper */
+.code-editor {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Console panel ── */
+.console-panel {
+  height: 220px;
+  min-height: 120px;
+  max-height: 40%;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--bg-border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.console-resize-handle {
+  height: 6px;
+  background: var(--bg-border);
+  cursor: row-resize;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  touch-action: none;
+}
+
+.console-resize-handle:hover,
+.console-resize-handle.active {
+  background: var(--accent-primary);
+}
+
+.no-select {
+  user-select: none;
+}
+
+.resizing-col {
+  cursor: col-resize;
+}
+
+.resizing-row {
+  cursor: row-resize;
+}
+
+@media (max-width: 960px) {
+  .left-panel {
+    min-width: 220px;
+  }
+
+  .console-panel {
+    min-height: 100px;
+  }
+}
+
+.console-tabs {
+  display: flex;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--bg-border);
+  flex-shrink: 0;
+}
+
+.console-tab-btn {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+  margin-bottom: -1px;
+}
+
+.console-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.console-tab-btn.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+.console-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+}
+
+/* ── Text helpers ── */
+.text-muted {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+.text-success {
+  color: var(--accent-success);
+}
+
+.text-error {
+  color: var(--accent-danger);
+}
+
+.text-error-primary {
+  color: var(--accent-danger);
+}
+
+/* ── TestCasePanel ── */
+.testcase-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.testcase-btn {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.testcase-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.testcase-btn.active {
+  background: var(--accent-primary-soft);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.testcase-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.testcase-section label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.testcase-pre {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── ResultsPanel ── */
+.results-content {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* Notification Animations */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── SweetAlert2 Custom Styling ─────────────────────────────────────────────── */
+.dark .swal2-popup {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-elevated) !important;
+}
+
+.light .swal2-popup {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark .swal2-title,
+.light .swal2-title {
+  color: var(--text-primary) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.dark .swal2-html-container,
+.dark .swal2-content {
+  color: var(--text-secondary) !important;
+  font-size: 0.95rem !important;
+}
+
+.light .swal2-html-container,
+.light .swal2-content {
+  color: var(--text-secondary) !important;
+  font-size: 0.95rem !important;
+}
+
+.swal2-icon {
+  border-color: transparent !important;
+  margin: 1.5rem auto 1rem !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: var(--accent-danger) !important;
+  color: var(--accent-danger) !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: var(--accent-success) !important;
+  color: var(--accent-success) !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: var(--accent-warning) !important;
+  color: var(--accent-warning) !important;
+}
+
+.swal2-icon.swal2-info,
+.swal2-icon.swal2-question {
+  border-color: var(--accent-info) !important;
+  color: var(--accent-info) !important;
+}
+
+.swal2-confirm {
+  background: var(--accent-primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0.625rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.swal2-confirm:hover {
+  background: var(--accent-primary-hover) !important;
+  transform: translateY(-1px) !important;
+}
+
+.swal2-cancel {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0.625rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.swal2-cancel:hover {
+  background: var(--bg-border) !important;
+  transform: translateY(-1px) !important;
+}
+
+.dark .swal2-input,
+.dark .swal2-textarea {
+  background: var(--bg-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+
+.light .swal2-input,
+.light .swal2-textarea {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+
+.swal2-input:focus,
+.swal2-textarea:focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3px var(--accent-primary-soft) !important;
+}
+
+.swal2-progress-steps {
+  background: transparent !important;
+}
+
+.swal2-progress-steps li {
+  background: var(--accent-primary) !important;
+}
+
+.dark .swal2-progress-steps li:not(:last-child)::after {
+  background: var(--bg-border) !important;
+}
+
+.light .swal2-progress-steps li:not(:last-child)::after {
+  background: var(--bg-border) !important;
+}
+
+.dark .swal2-footer,
+.light .swal2-footer {
+  border-top: 1px solid var(--bg-border) !important;
+  color: var(--text-secondary) !important;
+}
+
+.dark .swal2-close,
+.light .swal2-close {
+  color: var(--text-secondary) !important;
+}
+
+.dark .swal2-close:hover,
+.light .swal2-close:hover {
+  color: var(--text-primary) !important;
+}

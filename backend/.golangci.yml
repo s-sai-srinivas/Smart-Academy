@@ -1,0 +1,73 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gocyclo
+    - gofmt
+    - goimports
+    - misspell
+    - nilerr
+    - revive
+    - unconvert
+
+linters-settings:
+  gocyclo:
+    min-complexity: 50
+  govet:
+    enable-all: false
+    disable:
+      - fieldalignment
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+      - name: unused-parameter
+        severity: warning
+      - name: unreachable-code
+        severity: error
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unparam
+    - path: database/db\.go
+      linters:
+        - gocyclo
+    - path: handlers/
+      linters:
+        - gocyclo
+    - path: services/
+      linters:
+        - gocyclo
+    - path: services/plagiarism\.go
+      linters:
+        - errcheck
+    - path: services/agent_orchestrator\.go
+      linters:
+        - errcheck
+        - ineffassign
+        - nilerr
+        - revive
+    - path: logger/logger\.go
+      linters:
+        - unused
+        - staticcheck
+
+  exclude-dirs:
+    - scripts
+
+max-same-issues: 3
+max-issues-per-linter: 20

@@ -1,0 +1,13 @@
+import { Outlet } from 'react-router-dom';
+
+const AdminDashboard: React.FC = () => {
+  return (
+    <div className="min-h-[calc(100vh-64px)] bg-background-primary">
+      <main className="p-6">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+export default AdminDashboard;

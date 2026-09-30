@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartAcademy</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Prevent flash of incorrect theme -->
+  <script>
+    (function() {
+      var root = document.documentElement;
+      root.classList.add('theme-switching');
+      var stored = localStorage.getItem('theme');
+      if (stored === 'light') {
+        root.classList.remove('dark');
+        root.classList.add('light');
+      } else if (!stored && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        root.classList.remove('dark');
+        root.classList.add('light');
+      }
+      setTimeout(function() {
+        root.classList.remove('theme-switching');
+      }, 50);
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

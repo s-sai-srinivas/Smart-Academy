@@ -1,0 +1,23 @@
+{
+  "name": "smart-academy",
+  "private": true,
+  "description": "Smart Academy - Learning Management Platform",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "frontend/src/**/*.{ts,tsx}": [
+      "cd frontend && npx eslint --fix"
+    ],
+    "frontend/src/**/*.{ts,tsx,css,json}": [
+      "cd frontend && npx prettier --write"
+    ],
+    "backend/**/*.go": [
+      "cd backend && golangci-lint run --timeout=2m ./..."
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0"
+  }
+}

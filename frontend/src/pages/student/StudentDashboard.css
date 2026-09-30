@@ -1,0 +1,63 @@
+/* ─── Student Dashboard Styles ─────────────────────────────────────────────── */
+
+/* ── Heatmap Styles ── */
+.activity-heatmap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.heatmap-grid {
+  display: flex;
+  gap: 3px;
+  min-width: max-content;
+}
+
+.heatmap-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.heatmap-day {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  transition: transform 0.1s ease;
+}
+
+.heatmap-day:hover {
+  transform: scale(1.3);
+  outline: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.heatmap-day.day-empty {
+  background: var(--bg-tertiary, #1e293b);
+}
+
+.heatmap-day.day-low {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.heatmap-day.day-medium {
+  background: rgba(34, 197, 94, 0.6);
+}
+
+.heatmap-day.day-high {
+  background: rgba(34, 197, 94, 1);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.legend-item {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}

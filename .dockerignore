@@ -1,0 +1,15 @@
+.git
+.github
+node_modules
+dist
+*.log
+*.exe
+*.tmp
+.env
+.env.local
+.vscode
+.idea
+*.md
+docs/
+deployment/
+image/

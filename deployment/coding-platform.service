@@ -1,0 +1,25 @@
+[Unit]
+Description=Smart Academy Backend Server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=neeharika
+WorkingDirectory=/home/neeharika/apps/coding-platform/backend
+ExecStart=/home/neeharika/apps/coding-platform/backend/server
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment="PATH=/usr/local/go/bin:/usr/bin:/bin"
+Environment="GIN_MODE=release"
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

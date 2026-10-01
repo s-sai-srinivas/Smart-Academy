@@ -74,7 +74,7 @@ services:
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://smart-academy-api.onrender.com/api/*
+        destination: https://smart-academy-api-lqnj.onrender.com/api/*
 
 databases:
   - name: smart-academy-db

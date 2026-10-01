@@ -23,15 +23,19 @@ var generationJobService *services.GenerationJobService
 var agentOrchestrator *services.AgentOrchestrator
 
 // initContestGenerationService initializes the contest generation service
-func initContestGenerationService() {
+func initContestGenerationService() error {
 	if contestGenerationService == nil {
-		aiProvider := services.NewGeminiProvider(
+		aiProvider, err := services.GetAIProvider(
+			config.AppConfig.AIProvider,
 			config.AppConfig.AIAPIKey,
 			config.AppConfig.AIModel,
 			config.AppConfig.AIMaxTokens,
 			config.AppConfig.AITemperature,
 			config.AppConfig.AIRateLimitRPM,
 		)
+		if err != nil {
+			return err
+		}
 		// Initialize orchestrator first (needed by contest service)
 		agentOrchestrator = services.NewAgentOrchestrator(aiProvider)
 		// Initialize generation job service
@@ -39,6 +43,7 @@ func initContestGenerationService() {
 		// Initialize contest generation service with orchestrator
 		contestGenerationService = services.NewContestGenerationService(aiProvider, agentOrchestrator)
 	}
+	return nil
 }
 
 // =====================================================
@@ -79,7 +84,10 @@ type ApproveProblemsRequest struct {
 
 // GenerateContestProblems starts async generation of contest problems
 func GenerateContestProblems(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	// Get admin info
 	userRegdNo, _ := c.Get("regdno")
@@ -180,7 +188,10 @@ func GenerateContestProblems(c *gin.Context) {
 
 // GetContestGenerationJobStatus returns the status of a contest generation job
 func GetContestGenerationJobStatus(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -217,7 +228,10 @@ func GetContestGenerationJobStatus(c *gin.Context) {
 
 // GetGeneratedProblems returns generated problems for faculty review
 func GetGeneratedProblems(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -275,7 +289,10 @@ func GetGeneratedProblems(c *gin.Context) {
 
 // GetGeneratedProblemDetail returns full details of a specific generated problem
 func GetGeneratedProblemDetail(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -321,7 +338,10 @@ func GetGeneratedProblemDetail(c *gin.Context) {
 
 // ApproveGeneratedProblems saves approved problems to database
 func ApproveGeneratedProblems(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -497,7 +517,10 @@ func ApproveGeneratedProblems(c *gin.Context) {
 
 // RegenerateProblem requests regeneration of a specific problem
 func RegenerateProblem(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -542,7 +565,10 @@ func RegenerateProblem(c *gin.Context) {
 
 // GenerateEditorial generates editorial hints for a contest problem (post-contest)
 func GenerateEditorial(c *gin.Context) {
-	initContestGenerationService()
+	if err := initContestGenerationService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	var req models.EditorialRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

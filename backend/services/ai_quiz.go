@@ -76,13 +76,16 @@ type GeneratedQuestion struct {
 // Gemini Provider Implementation
 // =====================================================
 
-// GeminiProvider implements AIProvider using Google's Gemini API
+// GeminiProvider implements AIProvider using Google's Gemini API.
+// It can also adapt to OpenAI-compatible chat-completions endpoints
+// (e.g. Groq, OpenAI) when format is "openai".
 type GeminiProvider struct {
 	apiKey       string
 	model        string
 	maxTokens    int
 	temperature  float64
 	apiURL       string
+	format       string // "gemini" (default) or "openai"
 	httpClient   *http.Client
 	rateLimitRPS float64         // Requests per second
 	rateLimiter  *APIRateLimiter // Token-aware rate limiter
@@ -106,12 +109,30 @@ func NewGeminiProvider(apiKey, model string, maxTokens int, temperature float64,
 		maxTokens:    maxTokens,
 		temperature:  temperature,
 		apiURL:       fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", model),
+		format:       "gemini",
 		rateLimitRPS: rateLimitRPS,
 		rateLimiter:  NewAPIRateLimiter(rlConfig),
 		httpClient: &http.Client{
 			Timeout: 300 * time.Second,
 		},
 	}
+}
+
+// NewOpenAICompatibleProvider creates a provider that talks to an
+// OpenAI-compatible chat-completions API (Groq, OpenAI, ...).
+// The returned value adapts requests/responses to the Gemini-shaped
+// payloads used throughout this package, so all existing prompt
+// builders and response parsers work unchanged.
+func NewOpenAICompatibleProvider(providerName, apiKey, model string, maxTokens int, temperature float64, rateLimitRPM int) *GeminiProvider {
+	p := NewGeminiProvider(apiKey, model, maxTokens, temperature, rateLimitRPM)
+	p.format = "openai"
+	switch strings.ToLower(providerName) {
+	case "groq":
+		p.apiURL = "https://api.groq.com/openai/v1/chat/completions"
+	default: // "openai" and generic OpenAI-compatible endpoints
+		p.apiURL = "https://api.openai.com/v1/chat/completions"
+	}
+	return p
 }
 
 // EstimateTokens estimates tokens using 4 chars ≈ 1 token heuristic
@@ -209,9 +230,16 @@ func (p *GeminiProvider) GenerateQuizQuestions(ctx context.Context, req QuizGene
 	return nil, fmt.Errorf("after %d retries: %w", maxRetries, lastErr)
 }
 
-// doRequest performs the actual HTTP request to Gemini API
-// Returns the response body, status code, and error
+// doRequest performs the actual HTTP request to the AI API.
+// jsonData is always a Gemini-shaped generateContent body; when the
+// provider format is "openai" it is translated to/from a chat-
+// completions request so callers never need to care.
+// Returns the (Gemini-shaped) response body, status code, and error.
 func (p *GeminiProvider) doRequest(ctx context.Context, jsonData []byte) ([]byte, int, error) {
+	if p.format == "openai" {
+		return p.doOpenAIRequest(ctx, jsonData)
+	}
+
 	// Build URL without API key in query string (use header instead)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -237,6 +265,123 @@ func (p *GeminiProvider) doRequest(ctx context.Context, jsonData []byte) ([]byte
 	}
 
 	return body, resp.StatusCode, nil
+}
+
+// doOpenAIRequest translates a Gemini-shaped generateContent body into an
+// OpenAI-compatible chat-completions request, executes it against p.apiURL,
+// and re-wraps the answer text into a Gemini-shaped response body so all
+// downstream parsing stays identical.
+func (p *GeminiProvider) doOpenAIRequest(ctx context.Context, jsonData []byte) ([]byte, int, error) {
+	// Extract prompt + generation params from the Gemini-shaped request
+	var geminiReq struct {
+		Contents []struct {
+			Parts []struct {
+				Text string `json:"text"`
+			} `json:"parts"`
+		} `json:"contents"`
+		GenerationConfig struct {
+			MaxOutputTokens  int     `json:"maxOutputTokens"`
+			Temperature      float64 `json:"temperature"`
+			ResponseMimeType string  `json:"responseMimeType"`
+		} `json:"generationConfig"`
+	}
+	if err := json.Unmarshal(jsonData, &geminiReq); err != nil {
+		return nil, 0, fmt.Errorf("error decoding Gemini request for translation: %w", err)
+	}
+
+	var prompt string
+	if len(geminiReq.Contents) > 0 && len(geminiReq.Contents[0].Parts) > 0 {
+		prompt = geminiReq.Contents[0].Parts[0].Text
+	}
+	if prompt == "" {
+		return nil, 0, fmt.Errorf("empty prompt in translated request")
+	}
+
+	chatReq := map[string]interface{}{
+		"model": p.model,
+		"messages": []map[string]string{
+			{"role": "user", "content": prompt},
+		},
+	}
+	if geminiReq.GenerationConfig.Temperature != 0 {
+		chatReq["temperature"] = geminiReq.GenerationConfig.Temperature
+	}
+	if geminiReq.GenerationConfig.MaxOutputTokens > 0 {
+		// Reasoning models (e.g. Groq's gpt-oss) spend tokens on hidden
+		// chain-of-thought; small budgets get exhausted before any visible
+		// output. Enforce a floor so the completion can actually be produced.
+		maxOut := geminiReq.GenerationConfig.MaxOutputTokens
+		if maxOut < 2048 {
+			maxOut = 2048
+		}
+		chatReq["max_completion_tokens"] = maxOut
+	}
+	if geminiReq.GenerationConfig.ResponseMimeType == "application/json" {
+		chatReq["response_format"] = map[string]string{"type": "json_object"}
+	}
+	if strings.Contains(p.apiURL, "groq") {
+		// Keep reasoning-token burn low on Groq's gpt-oss models
+		chatReq["reasoning_effort"] = "low"
+	}
+
+	chatData, err := json.Marshal(chatReq)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error marshaling OpenAI-compatible request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(chatData))
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating HTTP request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+p.apiKey)
+
+	resp, err := p.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, 0, fmt.Errorf("AI API error: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("error reading response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, resp.StatusCode, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Extract assistant text and wrap it in the Gemini response shape
+	var chatResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(body, &chatResp); err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("error parsing chat completion response: %w", err)
+	}
+	if len(chatResp.Choices) == 0 || chatResp.Choices[0].Message.Content == "" {
+		return nil, resp.StatusCode, fmt.Errorf("no content in AI response")
+	}
+
+	wrapped, err := json.Marshal(map[string]interface{}{
+		"candidates": []map[string]interface{}{
+			{
+				"content": map[string]interface{}{
+					"parts": []map[string]string{
+						{"text": chatResp.Choices[0].Message.Content},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("error wrapping AI response: %w", err)
+	}
+
+	return wrapped, resp.StatusCode, nil
 }
 
 // =====================================================
@@ -637,12 +782,16 @@ func toBool(v interface{}) bool {
 	}
 }
 
-// GetAIProvider returns the appropriate AI provider based on configuration
-func GetAIProvider(providerType, apiKey, model string, maxTokens int, temperature float64, rateLimitRPM int) (AIProvider, error) {
+// GetAIProvider returns the appropriate AI provider based on configuration.
+// Returns the concrete *GeminiProvider so it can be passed to services that
+// require the concrete type (lesson plans, contest generation, orchestrator).
+func GetAIProvider(providerType, apiKey, model string, maxTokens int, temperature float64, rateLimitRPM int) (*GeminiProvider, error) {
 	switch strings.ToLower(providerType) {
 	case "gemini", "google":
 		return NewGeminiProvider(apiKey, model, maxTokens, temperature, rateLimitRPM), nil
+	case "groq", "openai":
+		return NewOpenAICompatibleProvider(providerType, apiKey, model, maxTokens, temperature, rateLimitRPM), nil
 	default:
-		return nil, fmt.Errorf("unsupported AI provider: %s (supported: gemini)", providerType)
+		return nil, fmt.Errorf("unsupported AI provider: %s (supported: gemini, groq, openai)", providerType)
 	}
 }

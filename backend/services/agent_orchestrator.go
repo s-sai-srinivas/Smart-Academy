@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -598,7 +597,7 @@ func (o *AgentOrchestrator) ProcessLessonPlanWithAgents(ctx context.Context, doc
 }
 
 // ValidateStructure validates a lesson plan structure using the Critic Agent
-func (a *Agent) ValidateStructure(_ context.Context, structure *models.LessonPlanStructure, originalContent string) (*CriticResult, error) {
+func (a *Agent) ValidateStructure(ctx context.Context, structure *models.LessonPlanStructure, originalContent string) (*CriticResult, error) {
 	if a.Role != AgentCritic {
 		return nil, fmt.Errorf("only Critic agent can validate")
 	}
@@ -621,18 +620,10 @@ func (a *Agent) ValidateStructure(_ context.Context, structure *models.LessonPla
 	}
 
 	jsonData, _ := json.Marshal(geminiReq)
-	httpReq, err := http.NewRequest("POST", a.aiProvider.apiURL, strings.NewReader(string(jsonData)))
-	if err != nil {
-		return &CriticResult{Approved: true}, nil
+	body, statusCode, err := a.aiProvider.doRequest(ctx, jsonData)
+	if err != nil || statusCode != http.StatusOK {
+		return &CriticResult{Approved: true}, nil // Don't fail on AI errors
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", a.aiProvider.apiKey)
-
-	resp, err := a.aiProvider.httpClient.Do(httpReq)
-	if err != nil {
-		return &CriticResult{Approved: true}, nil // Don't fail on network errors
-	}
-	defer resp.Body.Close()
 
 	var geminiResp struct {
 		Candidates []struct {
@@ -642,7 +633,7 @@ func (a *Agent) ValidateStructure(_ context.Context, structure *models.LessonPla
 		} `json:"candidates"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+	if err := json.Unmarshal(body, &geminiResp); err != nil {
 		return &CriticResult{Approved: true}, nil
 	}
 
@@ -947,7 +938,7 @@ func (a *Agent) ExecuteContest(ctx context.Context, state AgentState, input map[
 }
 
 // generateContestThought generates thoughts for contest problem generation
-func (a *Agent) generateContestThought(_ context.Context, _ map[string]interface{}, iteration int, state *ContestAgentState) (string, error) {
+func (a *Agent) generateContestThought(ctx context.Context, _ map[string]interface{}, iteration int, state *ContestAgentState) (string, error) {
 	var sb strings.Builder
 
 	sb.WriteString("You are the Contest Agent generating a competitive programming problem.\n\n")
@@ -1004,18 +995,10 @@ func (a *Agent) generateContestThought(_ context.Context, _ map[string]interface
 	}
 
 	jsonData, _ := json.Marshal(geminiReq)
-	httpReq, err := http.NewRequest("POST", a.aiProvider.apiURL, strings.NewReader(string(jsonData)))
-	if err != nil {
+	body, statusCode, err := a.aiProvider.doRequest(ctx, jsonData)
+	if err != nil || statusCode != http.StatusOK {
 		return "Need to generate or verify problem", nil
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", a.aiProvider.apiKey)
-
-	resp, err := a.aiProvider.httpClient.Do(httpReq)
-	if err != nil {
-		return "Need to generate or verify problem", nil
-	}
-	defer resp.Body.Close()
 
 	var geminiResp struct {
 		Candidates []struct {
@@ -1025,7 +1008,7 @@ func (a *Agent) generateContestThought(_ context.Context, _ map[string]interface
 		} `json:"candidates"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+	if err := json.Unmarshal(body, &geminiResp); err != nil {
 		return "Need to generate or verify problem", nil
 	}
 
@@ -1037,7 +1020,7 @@ func (a *Agent) generateContestThought(_ context.Context, _ map[string]interface
 }
 
 // decideContestAction decides which tool to use for contest generation
-func (a *Agent) decideContestAction(_ context.Context, thought string, _ map[string]interface{}, state *ContestAgentState) (*AgentAction, error) {
+func (a *Agent) decideContestAction(ctx context.Context, thought string, _ map[string]interface{}, state *ContestAgentState) (*AgentAction, error) {
 	// Build context for decision
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Thought: %s\n\n", thought))
@@ -1078,30 +1061,11 @@ func (a *Agent) decideContestAction(_ context.Context, thought string, _ map[str
 	}
 
 	jsonData, _ := json.Marshal(geminiReq)
-	httpReq, err := http.NewRequest("POST", a.aiProvider.apiURL, strings.NewReader(string(jsonData)))
+	bodyBytes, statusCode, err := a.aiProvider.doRequest(ctx, jsonData)
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", a.aiProvider.apiKey)
-
-	resp, err := a.aiProvider.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// Read raw response body for debugging
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-	log.Printf("[Agent:%s] decideContestAction Gemini response status: %d, body: %s", a.Role, resp.StatusCode, string(bodyBytes))
-
-	// Check for HTTP errors
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("gemini API error (status %d): %s", resp.StatusCode, string(bodyBytes))
-	}
+	log.Printf("[Agent:%s] decideContestAction AI response status: %d, body: %s", a.Role, statusCode, string(bodyBytes))
 
 	var geminiResp struct {
 		Candidates []struct {
@@ -1369,7 +1333,7 @@ func (a *Agent) Execute(ctx context.Context, state AgentState, input map[string]
 }
 
 // generateThought uses LLM to generate next thought in ReAct cycle
-func (a *Agent) generateThought(_ context.Context, input map[string]interface{}, iteration int) (string, error) {
+func (a *Agent) generateThought(ctx context.Context, input map[string]interface{}, iteration int) (string, error) {
 	prompt := a.buildReActPrompt(input, iteration)
 
 	geminiReq := map[string]interface{}{
@@ -1385,13 +1349,10 @@ func (a *Agent) generateThought(_ context.Context, input map[string]interface{},
 	}
 
 	jsonData, _ := json.Marshal(geminiReq)
-	url := fmt.Sprintf("%s?key=%s", a.aiProvider.apiURL, a.aiProvider.apiKey)
-
-	resp, err := a.aiProvider.httpClient.Post(url, "application/json", strings.NewReader(string(jsonData)))
-	if err != nil {
-		return "", err
+	body, statusCode, err := a.aiProvider.doRequest(ctx, jsonData)
+	if err != nil || statusCode != http.StatusOK {
+		return "", fmt.Errorf("AI request failed: %w", err)
 	}
-	defer resp.Body.Close()
 
 	var geminiResp struct {
 		Candidates []struct {
@@ -1401,7 +1362,7 @@ func (a *Agent) generateThought(_ context.Context, input map[string]interface{},
 		} `json:"candidates"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+	if err := json.Unmarshal(body, &geminiResp); err != nil {
 		return "", err
 	}
 
@@ -1413,7 +1374,7 @@ func (a *Agent) generateThought(_ context.Context, input map[string]interface{},
 }
 
 // decideAction uses LLM to decide which tool to use
-func (a *Agent) decideAction(_ context.Context, thought string, _ map[string]interface{}) (*AgentAction, error) {
+func (a *Agent) decideAction(ctx context.Context, thought string, _ map[string]interface{}) (*AgentAction, error) {
 	// Use LLM to decide on action
 	prompt := fmt.Sprintf(`Based on this thought: "%s"
 Choose the next action. Available tools: %v
@@ -1437,30 +1398,11 @@ Return JSON: {"tool_name": "...", "params": {...}, "reason": "..."}`,
 	}
 
 	jsonData, _ := json.Marshal(geminiReq)
-	httpReq, err := http.NewRequest("POST", a.aiProvider.apiURL, strings.NewReader(string(jsonData)))
+	bodyBytes, statusCode, err := a.aiProvider.doRequest(ctx, jsonData)
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", a.aiProvider.apiKey)
-
-	resp, err := a.aiProvider.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// Read raw response body for debugging
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-	log.Printf("[Agent:%s] decideAction Gemini response status: %d, body: %s", a.Role, resp.StatusCode, string(bodyBytes))
-
-	// Check for HTTP errors
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("gemini API error (status %d): %s", resp.StatusCode, string(bodyBytes))
-	}
+	log.Printf("[Agent:%s] decideAction AI response status: %d, body: %s", a.Role, statusCode, string(bodyBytes))
 
 	var geminiResp struct {
 		Candidates []struct {

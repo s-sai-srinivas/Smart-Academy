@@ -1,15 +1,12 @@
 package services
 
 import (
-	"bytes"
 	"coding-platform/models"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"math/rand"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -96,26 +93,9 @@ func (p *GeminiProvider) ParseLessonPlan(ctx context.Context, req LessonPlanRequ
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	structure, err := p.parseLessonPlanResponse(body)
@@ -154,26 +134,9 @@ func (p *GeminiProvider) GeneratePracticeQuiz(ctx context.Context, req PracticeQ
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	questions, err := p.parsePracticeQuizResponse(body)
@@ -218,26 +181,9 @@ func (p *GeminiProvider) ParseLessonPlanWithFeedback(ctx context.Context, req Le
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	structure, err := p.parseLessonPlanResponse(body)
@@ -633,26 +579,9 @@ func (p *GeminiProvider) ParseLessonPlanStructureOnly(ctx context.Context, req L
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	structure, err := p.parseLessonPlanStructureLiteResponse(body)
@@ -800,26 +729,9 @@ func (p *GeminiProvider) GenerateModuleContent(ctx context.Context, courseName, 
 		return models.ModuleData{}, fmt.Errorf("error marshaling Gemini request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s?key=%s", p.apiURL, p.apiKey)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return models.ModuleData{}, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return models.ModuleData{}, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return models.ModuleData{}, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return models.ModuleData{}, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return models.ModuleData{}, err
 	}
 
 	moduleData, err := p.parseModuleContentResponse(body)
@@ -956,26 +868,9 @@ func (p *GeminiProvider) GenerateBatchModuleContent(ctx context.Context, courseN
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	moduleData, err := p.parseBatchModuleContentResponse(body)
@@ -1401,26 +1296,9 @@ func (p *GeminiProvider) generateEditorialHints(ctx context.Context, prompt stri
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	editorial, err := p.parseEditorialResponse(body)
@@ -1514,26 +1392,9 @@ func (p *GeminiProvider) GenerateContestProblemSequential(ctx context.Context, r
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	problem, err := p.parseSingleContestProblemResponse(body)
@@ -1836,26 +1697,9 @@ func (p *GeminiProvider) GenerateContestProblem(ctx context.Context, topics []st
 	}
 
 	// Use header for API key (more secure than query string)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.apiURL, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-goog-api-key", p.apiKey)
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
 	problem, err := p.parseAgenticContestProblemResponse(body)
@@ -1893,26 +1737,9 @@ func (p *GeminiProvider) FixContestSolution(ctx context.Context, originalCode, e
 		return "", fmt.Errorf("error marshaling Gemini request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s?key=%s", p.apiURL, p.apiKey)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	body, _, err := p.doRequest(ctx, jsonData)
 	if err != nil {
-		return "", fmt.Errorf("error creating HTTP request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := p.httpClient.Do(httpReq)
-	if err != nil {
-		return "", fmt.Errorf("Gemini API error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+		return "", err
 	}
 
 	// Parse response

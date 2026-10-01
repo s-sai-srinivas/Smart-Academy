@@ -20,23 +20,31 @@ import (
 var lessonPlanService *services.GenerationJobService
 
 // initLessonPlanService initializes the lesson plan service
-func initLessonPlanService() {
+func initLessonPlanService() error {
 	if lessonPlanService == nil {
 		// Get AI provider from config
-		aiProvider := services.NewGeminiProvider(
+		aiProvider, err := services.GetAIProvider(
+			config.AppConfig.AIProvider,
 			config.AppConfig.AIAPIKey,
 			config.AppConfig.AIModel,
 			config.AppConfig.AIMaxTokens,
 			config.AppConfig.AITemperature,
 			config.AppConfig.AIRateLimitRPM,
 		)
+		if err != nil {
+			return err
+		}
 		lessonPlanService = services.NewGenerationJobService(aiProvider)
 	}
+	return nil
 }
 
 // UploadLessonPlan handles lesson plan file upload and AI processing
 func UploadLessonPlan(c *gin.Context) {
-	initLessonPlanService()
+	if err := initLessonPlanService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	// Check if user is admin
 	if !middleware.IsSuperAdmin(c) {
@@ -165,7 +173,10 @@ func UploadLessonPlan(c *gin.Context) {
 
 // GetGenerationJobStatus returns the status of a generation job
 func GetGenerationJobStatus(c *gin.Context) {
-	initLessonPlanService()
+	if err := initLessonPlanService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobIDStr := c.Param("id")
 	var jobID uint
@@ -229,7 +240,10 @@ func GetGenerationJobStatus(c *gin.Context) {
 
 // GetGenerationPreview returns a formatted preview of generated content
 func GetGenerationPreview(c *gin.Context) {
-	initLessonPlanService()
+	if err := initLessonPlanService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobIDStr := c.Param("id")
 	var jobID uint
@@ -298,7 +312,10 @@ func GetGenerationPreview(c *gin.Context) {
 
 // ApproveAndSaveGeneration approves AI-generated content and saves to database
 func ApproveAndSaveGeneration(c *gin.Context) {
-	initLessonPlanService()
+	if err := initLessonPlanService(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	jobIDStr := c.Param("id")
 	var jobID uint
@@ -455,13 +472,18 @@ func RegeneratePracticeQuiz(c *gin.Context) {
 	}
 
 	// Create AI provider and generate quiz
-	aiProvider := services.NewGeminiProvider(
+	aiProvider, err := services.GetAIProvider(
+		config.AppConfig.AIProvider,
 		config.AppConfig.AIAPIKey,
 		config.AppConfig.AIModel,
 		config.AppConfig.AIMaxTokens,
 		config.AppConfig.AITemperature,
 		config.AppConfig.AIRateLimitRPM,
 	)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI provider not configured: " + err.Error()})
+		return
+	}
 
 	req := services.PracticeQuizRequest{
 		WeekData: models.WeekData{

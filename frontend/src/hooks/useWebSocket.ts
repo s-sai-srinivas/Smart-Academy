@@ -25,6 +25,11 @@ export interface UseWebSocketReturn {
   reconnect: () => void;
 }
 
+// WebSocket endpoint is opt-in: the REST backend does not expose /api/ws and
+// Vercel cannot proxy WS upgrades, so connecting to same-origin always fails.
+// Set VITE_WS_URL (e.g. wss://api.example.com/api/ws) when a WS backend exists.
+const WS_BASE_URL = import.meta.env.VITE_WS_URL as string | undefined;
+
 /**
  * Custom hook for WebSocket connection with auto-reconnect
  */
@@ -87,7 +92,7 @@ export function useWebSocket(): UseWebSocketReturn {
   );
 
   const connect = useCallback(() => {
-    if (!isAuthenticated || !user || isUnmountedRef.current) {
+    if (!isAuthenticated || !user || isUnmountedRef.current || !WS_BASE_URL) {
       return;
     }
 
@@ -98,13 +103,11 @@ export function useWebSocket(): UseWebSocketReturn {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
     const token = secureTokenStorage.getToken();
     const wsUrl =
       token && token !== 'httpOnly'
-        ? `${protocol}//${host}/api/ws?token=${encodeURIComponent(token)}`
-        : `${protocol}//${host}/api/ws`;
+        ? `${WS_BASE_URL}?token=${encodeURIComponent(token)}`
+        : WS_BASE_URL;
 
     try {
       setConnectionError(null);
